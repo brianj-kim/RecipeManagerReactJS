@@ -1,24 +1,29 @@
-import logo from './logo.svg';
+import React from 'react';
+import { Switch, Route } from "react-router-dom";
 import './App.css';
+
+import NavBar from "./components/NavBar";
+import AddRecipe from "./components/AddRecipe";
+import RecipesList from "./components/RecipesList";
+import Recipe from "./components/Recipe";
+import RecipeIngredients from "./components/RecipeIngredients";
+import AddIngredient from "./components/AddIngredient";
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <div>
+        <NavBar />
+
+        <Switch>
+          <Route exact path={["/", "/recipes"]} component={RecipesList} />
+          <Route exact path="/add" component={AddRecipe} />
+          <Route path="/recipes/:id" component={Recipe} />
+          <Route path="/recipe-ingredients/:id" component={RecipeIngredients} />
+          <Route path="/ingredient/:id" component={AddIngredient} />
+        </Switch>       
+      </div>
+    </>
   );
 }
 
