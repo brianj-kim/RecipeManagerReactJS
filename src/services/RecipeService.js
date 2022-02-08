@@ -16,6 +16,14 @@ const update = (id, data) => {
     return http.put(`/recipes/${id}`, data);
 };
 
+const updateCostTotal = (id, cost) => {
+    return http.put(`/recipe/${id}/costs/${cost}`);
+}
+
+const updateIngredientsCounts = (id, counts) => {
+    return http.put(`/recipe/${id}/counts/${counts}`);
+}
+
 const remove = id => {
     return http.delete(`/recipes/${id}`);
 }
@@ -29,6 +37,8 @@ const RecipeService = {
     get,
     create,
     update,
+    updateCostTotal,
+    updateIngredientsCounts,
     remove,
     findByName
 }

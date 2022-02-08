@@ -6,7 +6,10 @@ const AddRecipe = () => {
         id: null,
         category: "",
         name: "",
-        description: ""
+        description: "",
+        costTotal: 0,
+        ingredientCount: 0,
+        revenue: 0,
     };
 
     const [recipe, setRecipe] = useState(initialRecipeState);
@@ -21,7 +24,10 @@ const AddRecipe = () => {
         var data = {
             name: recipe.name,
             category: recipe.category,
-            description: recipe.description
+            description: recipe.description,
+            costTotal: 0,
+            ingredientCount: 0,
+            revenue: 0,
         };
 
         RecipeDataSeervice.create(data)
@@ -30,7 +36,10 @@ const AddRecipe = () => {
                     id: res.data.id,
                     name: res.data.name,
                     category: res.data.category,
-                    description: res.data.description
+                    description: res.data.description,
+                    costTotal: 0,
+                    ingredientCount: 0,
+                    revenue: 0,
                 });
                 
                 setSubmitted(true);

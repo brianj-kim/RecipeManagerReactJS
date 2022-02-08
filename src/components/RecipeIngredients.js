@@ -4,12 +4,14 @@ import IngredientDataService from "../services/IngredientService";
 
 const RecipeIngredients = props => {
     // Set up for current recipe data
-    const [recipeId, setRecipeId] = useState(props.match.params.id);
+    const recipeId = props.match.params.id;
     const initialRecipeState = {
         id: null,
         name: "",
         category: "",
-        description: ""
+        description: "",
+        costTotal: 0.0,
+        ingredientCount: 0
     };
 
     const [recipe, setRecipe] = useState(initialRecipeState);    
@@ -27,14 +29,43 @@ const RecipeIngredients = props => {
 
     useEffect(() => {
         getRecipe(recipeId);
+        retrieveIngredients(recipeId);
     }, [recipeId]);
+
+    const updateCosts = (arr, rid) => {
+        // update ingredients' portion prices for the Recipe
+        let costSum = arr.reduce(function(prev, current) {
+            return prev + current.portionPrice
+        }, 0.0);
+
+        RecipeDataService.updateCostTotal(rid, costSum)
+            .then(res => {
+                // console.log(res);
+                // console.log(costSum);
+                setRecipe({ ...recipe, costTotal: costSum});
+            })
+            .catch(e => {
+                console.log(e);
+            });
+    }
+
+    const updateCounts = (arr, rid) => {
+        const counts = arr.length;
+
+        RecipeDataService.updateIngredientsCounts(rid, counts)            
+            .catch(e => {
+                console.log(e);
+            });
+
+        setRecipe({ ...recipe, ingredientCount: counts});
+    }
 
 
     // Ingredient(s) List
     const initialIngredientState = {
         id: null,
         ingredient: "",        
-        quantity: 0.0,
+        quantity: 0,
         unit: "",
         unitPrice: 0.0,
         loss: 0.0,
@@ -42,9 +73,7 @@ const RecipeIngredients = props => {
         description: ""
     };
 
-    const [ingredients, setIngredients] = useState([]);
-    const [currentIngredient, setCurrentIngredient] = useState(initialIngredientState);
-    const [currentIndex, setCurrentIndex] = useState(-1);    
+    const [ingredients, setIngredients] = useState([]);  
 
     const retrieveIngredients = rid => {
         IngredientDataService.getAll(rid)
@@ -56,17 +85,6 @@ const RecipeIngredients = props => {
                 console.log(e);
             });
     };
-
-    const refreshList = rid => {
-        retrieveIngredients(rid);
-        setCurrentIngredient(initialIngredientState);
-        setCurrentIndex(-1);
-    };
-
-    useEffect(() => {
-        retrieveIngredients(recipeId);
-    }, [recipeId]);
-
 
     // Add new ingredient with modal functionality
     const [modalHeader, setModalHeader] = useState("Add New Ingredient");
@@ -109,19 +127,17 @@ const RecipeIngredients = props => {
 
         IngredientDataService.create(rid, data)
             .then(res => {
-                setNewIngredient({
-                    id: res.data.id,
-                    ingredient: res.data.ingredient,
-                    quantity: res.data.quantiry,
-                    unit: res.data.unit,
-                    unitPrice: res.data.unitPrice,
-                    loss: res.data.loss,
-                    portionPrice: res.data.portionPrice,
-                    description: res.data.description
-                });
+                // console.log(res.data);
+                // setIngredients(res.data, ...ingredients);
+                const tmpIngredients = [res.data, ...ingredients];
+                setIngredients(tmpIngredients);
                 
+                updateCosts(tmpIngredients, rid);
+                updateCounts(tmpIngredients, rid);
+                // console.log(tmpIngredients.length);
+
                 setShowAddIngredient(false);
-                refreshList(rid);
+                setNewIngredient(initialIngredientState);
                 // console.log(res.data);
             })
             .catch(e => {
@@ -131,6 +147,7 @@ const RecipeIngredients = props => {
 
 
     // Update Ingredient with recipe id and ingredient id
+    // Function updateCosts: With all the ingredients' porttion prices, to update the recipe: costTotal
     const editIngredient = iid => {
         var tmpIngredient = ingredients.find(({ id }) => id === iid);
         setNewIngredient(tmpIngredient);
@@ -151,31 +168,29 @@ const RecipeIngredients = props => {
         
         IngredientDataService.update(rid, iid, data)
             .then(res => {
-                setNewIngredient({
-                    id: res.data.id,
-                    ingredient: res.data.ingredient,
-                    quantity: res.data.quantiry,
-                    unit: res.data.unit,
-                    unitPrice: res.data.unitPrice,
-                    loss: res.data.loss,
-                    portionPrice: res.data.portionPrice,
-                    description: res.data.description
-                });
-
-                setShowAddIngredient(false);
-                refreshList(rid);
                 // console.log(res.data);
+                const tmpIngredients = [...ingredients].map(key => key.id === iid ? res.data : key);
+                // console.log(tmpIngredients);
+                
+                updateCosts(tmpIngredients, rid);
+                updateCounts(tmpIngredients, rid);
+                
+                setIngredients(tmpIngredients);
+                setNewIngredient(initialIngredientState);
+                setShowAddIngredient(false);
             })
             .catch(e => {
                 console.log(e);
-            })
-
+            });
     }
+
+    
 
     const saveConfirm = () => {
         // console.log(newIngredient);
         if(newIngredient.id == null) {
             saveIngredient(recipeId);
+            // console.log(recipe);
         } else {
             updateIngredient(recipeId, newIngredient.id);
         }
@@ -184,8 +199,13 @@ const RecipeIngredients = props => {
     const removeIngredient = iid => {
         IngredientDataService.remove(recipeId, iid)
             .then(res => {
-                // console.log(res.data);
-                refreshList(recipeId);
+                if(res.status === 200) {
+                    const tmpIngredients = [...ingredients].filter(key => key.id !== iid);
+                    setIngredients(tmpIngredients);
+                    updateCosts(tmpIngredients, recipeId);
+                    updateCounts(tmpIngredients, recipeId);
+
+                }
             })
             .catch(e => {
                 console.log(e);
@@ -193,15 +213,41 @@ const RecipeIngredients = props => {
     }
 
     return (
-        <div className="container mx-auto overflow-hidden sm:rounded-lg">
-            <div className="px-5 py-4">
-                <span className="font-aleo-header text-2xl font-semibold text-purple-700">{recipe.name} </span>
-                <p>Category / {recipe.category}</p>
-                <p>Description / {recipe.description}</p>
+        <div className="container mx-auto overflow-hidden">
+            <div className="bg-white shadow overflow-hidden">
+                <div className="px-4 py-5 sm:px-6">
+                    <h3 className="leading-6 text-xl font-bold text-purple-700">{recipe.name}</h3>
+                    <p className="mt-1 max-w-2xl text-sm text-gray-500">Ingredient(s) cost and details</p>
+                </div>
+                <div className="border-t border-gray-200">
+                    <dl>
+                        <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt className="text-sm font-medium text-gray-500">Recipe Category</dt>
+                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{recipe.category}</dd>
+                        </div>
+                        <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt className="text-sm font-medium text-gray-500">Description</dt>
+                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{recipe.description}</dd>
+                        </div>
+
+                        <div className="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt className="text-sm font-medium text-gray-500">Ingredients Count</dt>
+                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{recipe.ingredientCount}</dd>
+                        </div>
+                        
+                        <div className="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                            <dt className="text-sm font-medium text-gray-500">Recipe Cost (Ingredients Total)</dt>
+                            <dd className="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">{new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(recipe.costTotal)}</dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
                 
+
+            <div className="px-5 py-8">                
                 <div className="flex justify-between items-center">
                     <div className="pt-6 ">
-                        <span className="font-aleo-header text-lg font-bold text-purple-700">
+                        <span className="text-xl font-bold text-purple-700">
                             Ingredients
                         </span>
                     </div>
@@ -262,7 +308,7 @@ const RecipeIngredients = props => {
                                                         name="quantity"
                                                         id="quantity"
                                                         className="w-full mt-1 focus:ring-purple-500 focus:border-purple-500 block shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                                        value={newIngredient.quantity || 0} 
+                                                        value={newIngredient.quantity || ''} 
                                                         onChange={handleInputChange}
                                                         onBlur={getPortionPrice}
                                                         />
@@ -291,7 +337,7 @@ const RecipeIngredients = props => {
                                                         name="unitPrice"
                                                         id="unitPrice"
                                                         className="w-full mt-1 focus:ring-purple-500 focus:border-purple-500 block shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                                        value={newIngredient.unitPrice || 0} 
+                                                        value={newIngredient.unitPrice || ''} 
                                                         onChange={handleInputChange}
                                                         onBlur={getPortionPrice}
                                                         />
@@ -306,7 +352,7 @@ const RecipeIngredients = props => {
                                                         name="loss"
                                                         id="loss"
                                                         className="w-full mt-1 focus:ring-purple-500 focus:border-purple-500 block shadow-sm sm:text-sm border-gray-300 rounded-md"
-                                                        value={newIngredient.loss || 0} 
+                                                        value={newIngredient.loss || ''} 
                                                         onChange={handleInputChange}
                                                         />
                                                     </div>
@@ -321,7 +367,7 @@ const RecipeIngredients = props => {
                                                         id="portionPrice"
                                                         className="w-full mt-1 focus:ring-purple-500 focus:border-purple-500 block shadow-sm sm:text-sm border-gray-300 rounded-md"
                                                         readOnly
-                                                        value={newIngredient.portionPrice || 0} 
+                                                        value={newIngredient.portionPrice || ''} 
                                                         onChange={handleInputChange}
                                                         />
                                                     </div>
@@ -420,13 +466,13 @@ const RecipeIngredients = props => {
                                 Description
                             </th>
                             
-                            <th scope="col" className="relative px-6 py-3">
-                                <span className="sr-only">Actions</span>
+                            <th scope="col" className="px-6 py-3 text-xs font-medium uppercase text-gray-500">
+                                Actions
                             </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200 ">
-                    {ingredients && ingredients.map((ingredient, recipeId) => (
+                    {ingredients && ingredients.map((ingredient) => (
                         <tr key={ingredient.id} >                            
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-900">{ingredient.ingredient}</div>
@@ -446,6 +492,7 @@ const RecipeIngredients = props => {
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-900">{new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(ingredient.portionPrice)}</div>
                             </td>
+                            
                             <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="text-sm text-gray-900">{ingredient.description}</div>
                             </td>
@@ -453,7 +500,7 @@ const RecipeIngredients = props => {
                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <span 
                                     onClick={() => removeIngredient(ingredient.id)}
-                                    className="pr-4 text-purple-600 hover:text-purple-900 cursor-pointer"
+                                    className="pr-4 text-red-500 hover:text-red-600 cursor-pointer"
                                 >
                                     Remove
                                 </span>

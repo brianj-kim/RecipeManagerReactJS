@@ -7,8 +7,6 @@ import { faImage } from '@fortawesome/free-solid-svg-icons';
 
 const RecipesList = () => {
     const [recipes, setRecipes] = useState([]);
-    const [currentRecipe, setCurrentRecipe] = useState(null);
-    const [currentIndex, setCurrentIndex] = useState(-1);
     const [searchName, setSearchName] = useState("");
 
     useEffect(() => {
@@ -33,13 +31,7 @@ const RecipesList = () => {
 
     const refreshList = () => {
         retrieveRecipes();
-        setCurrentRecipe(null);
-        setCurrentIndex(-1);
-    };
 
-    const setActiveRecipe = (recipe, index) => {
-        setCurrentRecipe(recipe);
-        setCurrentIndex(index);        
     };
 
     const removeRecipe = id => {
@@ -86,9 +78,20 @@ const RecipesList = () => {
                             scope="col"
                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                         >
-                            Description
+                            Ingredients
                         </th>
-                        
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                            Cost
+                        </th>
+                        <th
+                            scope="col"
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                            Revenue
+                        </th>                        
                         <th scope="col" className="relative px-6 py-3">
                             <span className="sr-only">Actions</span>
                         </th>
@@ -97,7 +100,7 @@ const RecipesList = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                     {recipes &&
                         recipes.map((recipe, index) => (
-                    <tr key={index}>
+                    <tr key={index} className="hover:bg-gray-50">
                         <td className="pl-6 pr-1 py-4 whitespace-nowrap">
                         <FontAwesomeIcon icon={faImage} />
                         </td>
@@ -114,9 +117,15 @@ const RecipesList = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{recipe.category}</div>
+                        </td>                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{recipe.ingredientCount}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{recipe.description}</div>
+                            <div className="text-sm text-gray-900">{new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(recipe.costTotal)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(recipe.revenue)}</div>
                         </td>
 
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
