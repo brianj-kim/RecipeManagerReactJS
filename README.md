@@ -1,7 +1,8 @@
 # RecipeManager Frontend app
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This project implements Frontend stack of the Recipe Manager application by using React.js
 
-## RecipeManager Backend app
+
+### RecipeManager Backend app
 
 [Spring backend](https://github.com/jiwoone/RecipeManagerAPI).
