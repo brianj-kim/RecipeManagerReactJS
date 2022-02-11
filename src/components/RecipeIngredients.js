@@ -15,34 +15,39 @@ const RecipeIngredients = props => {
     };
 
     const [recipe, setRecipe] = useState(initialRecipeState);    
-    
     const getRecipe = id => {
         RecipeDataService.get(id)
             .then(res => {
                 setRecipe(res.data);
-                // console.log(res.data);
+                //console.log(res.data);
             })
             .catch(e => {
                 console.log(e);
             });
     };
 
-    useEffect(() => {
+    useEffect(() => {        
         getRecipe(recipeId);
-        retrieveIngredients(recipeId);
+        retrieveIngredients(recipeId);  
+        
     }, [recipeId]);
 
     const updateCosts = (arr, rid) => {
-        // update ingredients' portion prices for the Recipe
+        // update ingredients' portion prices and ingredients count for the Recipe
         let costSum = arr.reduce(function(prev, current) {
             return prev + current.portionPrice
         }, 0.0);
 
         RecipeDataService.updateCostTotal(rid, costSum)
             .then(res => {
-                // console.log(res);
-                // console.log(costSum);
-                setRecipe({ ...recipe, costTotal: costSum});
+                //console.log(res.status);
+                if(res.status === 200) {
+                    let tmpRecipe = recipe;
+                    tmpRecipe.costTotal = costSum;
+                    setRecipe(tmpRecipe);
+
+                    //console.log(recipe);
+                }                
             })
             .catch(e => {
                 console.log(e);
@@ -50,14 +55,20 @@ const RecipeIngredients = props => {
     }
 
     const updateCounts = (arr, rid) => {
-        const counts = arr.length;
-
-        RecipeDataService.updateIngredientsCounts(rid, counts)            
+        let counts = arr.length;
+        RecipeDataService.updateIngredientsCounts(rid, counts)
+            .then(res => {
+                //console.log(res.status);
+                if(res.status === 200) {
+                    let tmpRecipe = recipe;
+                    tmpRecipe.ingredientCount = counts;
+                    setRecipe(tmpRecipe);
+                    // console.log(counts, recipe.ingredientCount);                    
+                }                
+            })            
             .catch(e => {
                 console.log(e);
             });
-
-        setRecipe({ ...recipe, ingredientCount: counts});
     }
 
 
@@ -73,6 +84,7 @@ const RecipeIngredients = props => {
         description: ""
     };
 
+
     const [ingredients, setIngredients] = useState([]);  
 
     const retrieveIngredients = rid => {
@@ -84,7 +96,7 @@ const RecipeIngredients = props => {
             .catch(e => {
                 console.log(e);
             });
-    };
+    };    
 
     // Add new ingredient with modal functionality
     const [modalHeader, setModalHeader] = useState("Add New Ingredient");
@@ -127,18 +139,21 @@ const RecipeIngredients = props => {
 
         IngredientDataService.create(rid, data)
             .then(res => {
-                // console.log(res.data);
-                // setIngredients(res.data, ...ingredients);
-                const tmpIngredients = [res.data, ...ingredients];
-                setIngredients(tmpIngredients);
-                
-                updateCosts(tmpIngredients, rid);
-                updateCounts(tmpIngredients, rid);
-                // console.log(tmpIngredients.length);
+                console.log(res.status);
+                if(res.status === 200) {                    
+                    const tmpIngredients = [res.data, ...ingredients];
 
-                setShowAddIngredient(false);
-                setNewIngredient(initialIngredientState);
-                // console.log(res.data);
+                    // console.log(tmpIngredients);
+                    updateCosts(tmpIngredients, rid);
+                    updateCounts(tmpIngredients, rid);
+                    
+                    setShowAddIngredient(false);
+                    setNewIngredient(initialIngredientState);
+
+                     setIngredients(tmpIngredients);                    
+                    // console.log(tmpIngredients.length);
+                    // console.log(res.data);
+                }
             })
             .catch(e => {
                 console.log(e);
@@ -184,7 +199,8 @@ const RecipeIngredients = props => {
             });
     }
 
-    
+
+
 
     const saveConfirm = () => {
         // console.log(newIngredient);
@@ -196,15 +212,18 @@ const RecipeIngredients = props => {
         }
     }
 
+
+
+    
     const removeIngredient = iid => {
         IngredientDataService.remove(recipeId, iid)
             .then(res => {
+                console.log(res.status);
                 if(res.status === 200) {
                     const tmpIngredients = [...ingredients].filter(key => key.id !== iid);
-                    setIngredients(tmpIngredients);
                     updateCosts(tmpIngredients, recipeId);
                     updateCounts(tmpIngredients, recipeId);
-
+                    setIngredients(tmpIngredients);                    
                 }
             })
             .catch(e => {

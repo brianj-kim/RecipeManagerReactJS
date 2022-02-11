@@ -10,7 +10,7 @@ const RecipesList = () => {
     const [searchName, setSearchName] = useState("");
 
     useEffect(() => {
-        retrieveRecipes();
+        retrieveRecipes()
     }, []);
 
     const onChangeSearchName = e => {
@@ -31,7 +31,6 @@ const RecipesList = () => {
 
     const refreshList = () => {
         retrieveRecipes();
-
     };
 
     const removeRecipe = id => {
@@ -98,8 +97,8 @@ const RecipesList = () => {
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                    {recipes &&
-                        recipes.map((recipe, index) => (
+                {recipes &&
+                    recipes.map((recipe, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                         <td className="pl-6 pr-1 py-4 whitespace-nowrap">
                         <FontAwesomeIcon icon={faImage} />

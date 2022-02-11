@@ -16,7 +16,7 @@ const Recipe = props => {
         RecipeDataService.get(id)
             .then(res => {
                 setCurrentRecipe(res.data);
-                console.log(res.data);
+                //console.log(res.data);
             })
             .catch(e => {
                 console.log(e);
